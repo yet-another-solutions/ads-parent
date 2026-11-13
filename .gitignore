@@ -1,0 +1,11 @@
+# Maven build artifacts
+target/
+.flattened-pom.xml
+
+# Logs
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/

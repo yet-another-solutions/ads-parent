@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ads-parent: parent POM for all poms of reworked ADS.
+
+  Rule: no dependency versions are declared here — every dependency version
+  comes from ads-bom (the single import below, locked to this parent's
+  ${revision}, so parent and BOM always move in lockstep).
+  Plugin versions and build configuration ARE declared here, in
+  pluginManagement; children never declare versions of managed plugins.
+  This POM has NO <parent> of its own (strict rule).
+  Base package for all java modules of ADS: yet.another.solutions.ads (strict rule).
+  Version scheme: every pom uses <version>${revision}</version>; the value comes
+  from the revision property (overridable via -Drevision=... on any mvn run).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>yet.another.solutions.ads</groupId>
+  <artifactId>ads-parent</artifactId>
+  <version>${revision}</version>
+  <packaging>pom</packaging>
+  <name>ads-parent</name>
+
+  <properties>
+    <!-- ==== project version (CI-friendly; override with -Drevision=...) ==== -->
+    <revision>0.1.0-SNAPSHOT</revision>
+
+    <!-- ==== language / platform (build-needed) ==== -->
+    <java.version>25</java.version>
+    <maven.compiler.release>25</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <!-- ==== plugin versions (single source of truth) ==== -->
+    <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.6.1</maven-surefire-plugin.version>
+    <flatten-maven-plugin.version>1.8.0</flatten-maven-plugin.version>
+    <!-- keep in sync with ads-bom's kotlin.version: Maven cannot inherit properties
+         from imported BOMs, so the Kotlin Maven plugin pin must live here too -->
+    <kotlin.version>2.4.21</kotlin.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- single version source: ads-bom, locked to the same ${revision} -->
+      <dependency>
+        <groupId>yet.another.solutions.ads</groupId>
+        <artifactId>ads-bom</artifactId>
+        <version>${revision}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+          <configuration>
+            <release>${maven.compiler.release}</release>
+            <parameters>true</parameters>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-maven-plugin</artifactId>
+          <version>${kotlin.version}</version>
+          <!-- kotlin-bom manages Kotlin libraries, not the Maven plugin; pin it here -->
+          <executions>
+            <execution>
+              <id>compile</id>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+              <configuration>
+                <sourceDirs>
+                  <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                </sourceDirs>
+              </configuration>
+            </execution>
+            <execution>
+              <id>test-compile</id>
+              <goals>
+                <goal>test-compile</goal>
+              </goals>
+              <configuration>
+                <sourceDirs>
+                  <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                </sourceDirs>
+              </configuration>
+            </execution>
+          </executions>
+          <configuration>
+            <!-- match maven-compiler release; Kotlin default 1.8 breaks inline libs built for 17+ -->
+            <jvmTarget>${java.version}</jvmTarget>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>flatten-maven-plugin</artifactId>
+          <version>${flatten-maven-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>flatten</id>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>flatten</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>flatten.clean</id>
+              <goals>
+                <goal>clean</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <updatePomFile>true</updatePomFile>
+            <pomElements>
+              <properties>interpolate</properties>
+              <parent>expand</parent>
+              <version>resolve</version>
+              <dependencyManagement>keep</dependencyManagement>
+              <build>keep</build>
+              <pluginManagement>keep</pluginManagement>
+              <pluginRepositories>keep</pluginRepositories>
+              <repositories>keep</repositories>
+              <distributionManagement>keep</distributionManagement>
+              <modules>keep</modules>
+              <reporting>keep</reporting>
+              <name>keep</name>
+              <description>keep</description>
+              <url>keep</url>
+              <scm>keep</scm>
+              <developers>keep</developers>
+              <issueManagement>keep</issueManagement>
+              <organization>keep</organization>
+            </pomElements>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <!-- activate flatten for this pom and all children;
+           version and configuration come from pluginManagement above -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>
